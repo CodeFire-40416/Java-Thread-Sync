@@ -20,8 +20,6 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 import java.util.Scanner;
@@ -60,15 +58,6 @@ public class LinkStore implements Runnable {
     
     @Override
     public void run() {
-        List<String> retrievePlaylist = retrievePlaylist();
-        
-        for (LinkStoreListener listener : listeners) {
-            listener.fetched(retrievePlaylist);
-        }
-        
-        links.clear();
-        links.addAll(retrievePlaylist);
-
         while (!links.isEmpty()) {
             try {
                 Thread.sleep(100);
@@ -83,7 +72,7 @@ public class LinkStore implements Runnable {
 
     }
 
-    private List<String> retrievePlaylist() {
+    public List<String> retrieveFilelist() {
         List<String> list = new ArrayList<>();
         
         try (Scanner scanner = new Scanner(playlist.openStream())) {
@@ -102,6 +91,11 @@ public class LinkStore implements Runnable {
         for (LinkStoreListener listener : listeners) {
             listener.downloaded(source, target);
         }
+    }
+
+    public void setDownloadList(List<String> selectedValuesList) {
+        this.links.clear();
+        this.links.addAll(selectedValuesList);
     }
 
 }

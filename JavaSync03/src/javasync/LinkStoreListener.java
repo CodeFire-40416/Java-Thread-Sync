@@ -16,15 +16,11 @@
  */
 package javasync;
 
-import java.util.List;
-
 /**
  *
  * @author CodeFireUA <edu@codefire.com.ua>
  */
 public interface LinkStoreListener {
-
-    public void fetched(List<String> links);
 
     public void downloaded(String source, String target);
 

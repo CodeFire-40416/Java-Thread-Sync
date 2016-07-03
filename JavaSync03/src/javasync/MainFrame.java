@@ -23,6 +23,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.DefaultListModel;
 import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
 
 /**
  *
@@ -32,13 +33,19 @@ public class MainFrame extends javax.swing.JFrame implements LinkStoreListener {
 
     private File selectedDirectory;
     private LinkStore linkStore;
+    private List<String> retrievePlaylist;
+    private int downloads;
 
     /**
      * Creates new form MainaFrame
      */
     public MainFrame() {
         initComponents();
-        
+
+        selectedDirectory = new File("downloads");
+
+        jtfLocation.setText(selectedDirectory.getAbsolutePath());
+
         jlDownloads.setModel(new DefaultListModel<>());
     }
 
@@ -61,7 +68,7 @@ public class MainFrame extends javax.swing.JFrame implements LinkStoreListener {
         jlDownloads = new javax.swing.JList<>();
         jSeparator2 = new javax.swing.JSeparator();
         jProgressBar = new javax.swing.JProgressBar();
-        jButton1 = new javax.swing.JButton();
+        jbDownload = new javax.swing.JButton();
         jbBrowse = new javax.swing.JButton();
         jLabel2 = new javax.swing.JLabel();
         jtfLocation = new javax.swing.JTextField();
@@ -79,7 +86,7 @@ public class MainFrame extends javax.swing.JFrame implements LinkStoreListener {
             }
         });
 
-        jSplitPane1.setDividerLocation(200);
+        jSplitPane1.setDividerLocation(300);
 
         jScrollPane1.setViewportView(jlUrls);
 
@@ -89,7 +96,13 @@ public class MainFrame extends javax.swing.JFrame implements LinkStoreListener {
 
         jSplitPane1.setRightComponent(jScrollPane2);
 
-        jButton1.setText("DOWNLOAD");
+        jbDownload.setText("DOWNLOAD");
+        jbDownload.setEnabled(false);
+        jbDownload.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jbDownloadActionPerformed(evt);
+            }
+        });
 
         jbBrowse.setText("Browse...");
         jbBrowse.addActionListener(new java.awt.event.ActionListener() {
@@ -114,7 +127,7 @@ public class MainFrame extends javax.swing.JFrame implements LinkStoreListener {
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jSplitPane1, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 589, Short.MAX_VALUE)
+                    .addComponent(jSplitPane1, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 879, Short.MAX_VALUE)
                     .addComponent(jSeparator1, javax.swing.GroupLayout.Alignment.TRAILING)
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                         .addComponent(jLabel1)
@@ -131,7 +144,7 @@ public class MainFrame extends javax.swing.JFrame implements LinkStoreListener {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jbBrowse)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jButton1)))
+                        .addComponent(jbDownload)))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -155,7 +168,7 @@ public class MainFrame extends javax.swing.JFrame implements LinkStoreListener {
                     .addComponent(jbBrowse)
                     .addComponent(jLabel2)
                     .addComponent(jtfLocation, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jButton1))
+                    .addComponent(jbDownload))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
@@ -177,16 +190,45 @@ public class MainFrame extends javax.swing.JFrame implements LinkStoreListener {
             String playlistAddress = jtfAddress.getText();
             linkStore = new LinkStore(playlistAddress);
             linkStore.addListener(this);
-            
-            for (int i = 0; i < 3; i++) {
-                new Thread(new DownloadTask(linkStore, selectedDirectory)).start();
+
+            retrievePlaylist = linkStore.retrieveFilelist();
+
+            if (retrievePlaylist.size() > 0) {
+                updateFileList(retrievePlaylist);
+                jbDownload.setEnabled(true);
             }
-            
-            new Thread(linkStore).start();
         } catch (MalformedURLException ex) {
             Logger.getLogger(MainFrame.class.getName()).log(Level.SEVERE, null, ex);
         }
     }//GEN-LAST:event_jbFetchActionPerformed
+
+    private void jbDownloadActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jbDownloadActionPerformed
+
+        if (jlUrls.getSelectedIndex() < 0) {
+            if (JOptionPane.showConfirmDialog(this, "Download full list?") == JOptionPane.YES_OPTION) {
+                linkStore.setDownloadList(retrievePlaylist);
+                downloads = retrievePlaylist.size();
+            } else {
+                return;
+            }
+        } else {
+            List<String> selectedValuesList = jlUrls.getSelectedValuesList();
+            linkStore.setDownloadList(selectedValuesList);
+            downloads = selectedValuesList.size();
+        }
+
+        if (!selectedDirectory.exists()) {
+            selectedDirectory.mkdir();
+        }
+
+        jProgressBar.setMaximum(downloads);
+
+        for (int i = 0; i < 3; i++) {
+            new Thread(new DownloadTask(linkStore, selectedDirectory)).start();
+        }
+
+        new Thread(linkStore).start();
+    }//GEN-LAST:event_jbDownloadActionPerformed
 
     private void chooseFile() {
 
@@ -213,7 +255,6 @@ public class MainFrame extends javax.swing.JFrame implements LinkStoreListener {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton jButton1;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JProgressBar jProgressBar;
@@ -223,6 +264,7 @@ public class MainFrame extends javax.swing.JFrame implements LinkStoreListener {
     private javax.swing.JSeparator jSeparator2;
     private javax.swing.JSplitPane jSplitPane1;
     private javax.swing.JButton jbBrowse;
+    private javax.swing.JButton jbDownload;
     private javax.swing.JButton jbFetch;
     private javax.swing.JList<String> jlDownloads;
     private javax.swing.JList<String> jlUrls;
@@ -230,9 +272,7 @@ public class MainFrame extends javax.swing.JFrame implements LinkStoreListener {
     private javax.swing.JTextField jtfLocation;
     // End of variables declaration//GEN-END:variables
 
-    @Override
-    public void fetched(List<String> links) {
-        System.out.println("Fetched: " + links.size());
+    public void updateFileList(List<String> links) {
         DefaultListModel dlm = new DefaultListModel();
 
         for (String link : links) {
@@ -245,6 +285,13 @@ public class MainFrame extends javax.swing.JFrame implements LinkStoreListener {
     @Override
     public void downloaded(String source, String target) {
         DefaultListModel<String> dlm = (DefaultListModel<String>) jlDownloads.getModel();
-        dlm.addElement(target);
+        dlm.addElement(new File(target).getAbsolutePath());
+
+        jProgressBar.setValue(jProgressBar.getValue() + 1);
+
+        if (--downloads == 0) {
+            JOptionPane.showMessageDialog(this, "Download complete!");
+            jProgressBar.setValue(0);
+        }
     }
 }
