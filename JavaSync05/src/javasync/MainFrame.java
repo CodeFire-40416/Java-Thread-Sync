@@ -29,6 +29,7 @@ import javax.swing.DefaultListModel;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.ListModel;
+import javazoom.jl.decoder.JavaLayerException;
 
 /**
  *
@@ -102,6 +103,11 @@ public class MainFrame extends javax.swing.JFrame implements LinkStoreListener {
 
         jSplitPane1.setLeftComponent(jScrollPane1);
 
+        jlDownloads.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                jlDownloadsMouseClicked(evt);
+            }
+        });
         jScrollPane2.setViewportView(jlDownloads);
 
         jSplitPane1.setRightComponent(jScrollPane2);
@@ -256,6 +262,24 @@ public class MainFrame extends javax.swing.JFrame implements LinkStoreListener {
         }
 
     }//GEN-LAST:event_jtfAddressKeyTyped
+
+    private void jlDownloadsMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jlDownloadsMouseClicked
+
+        if (evt.getClickCount() == 2) {
+            evt.consume();
+
+            if (jlDownloads.getSelectedIndex() >= 0) {
+
+                try {
+                    new PlayerFrame(jlDownloads.getSelectedValue().getTarget()).setVisible(true);
+                    
+                } catch (JavaLayerException ex) {
+                    Logger.getLogger(MainFrame.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        }
+
+    }//GEN-LAST:event_jlDownloadsMouseClicked
 
     private void chooseFile() {
 
