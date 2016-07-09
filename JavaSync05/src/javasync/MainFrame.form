@@ -90,6 +90,9 @@
       <Properties>
         <Property name="text" type="java.lang.String" value="http://www.ex.ua/playlist/2301371.m3u"/>
       </Properties>
+      <Events>
+        <EventHandler event="keyTyped" listener="java.awt.event.KeyListener" parameters="java.awt.event.KeyEvent" handler="jtfAddressKeyTyped"/>
+      </Events>
     </Component>
     <Component class="javax.swing.JButton" name="jbFetch">
       <Properties>

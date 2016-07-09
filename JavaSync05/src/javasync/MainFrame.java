@@ -16,6 +16,7 @@
  */
 package javasync;
 
+import java.awt.event.KeyEvent;
 import javasync.net.DownloadTask;
 import javasync.net.LinkStore;
 import javasync.net.LinkStoreListener;
@@ -82,6 +83,11 @@ public class MainFrame extends javax.swing.JFrame implements LinkStoreListener {
         jLabel1.setText("File list:");
 
         jtfAddress.setText("http://www.ex.ua/playlist/2301371.m3u");
+        jtfAddress.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                jtfAddressKeyTyped(evt);
+            }
+        });
 
         jbFetch.setText("Fetch");
         jbFetch.addActionListener(new java.awt.event.ActionListener() {
@@ -190,6 +196,10 @@ public class MainFrame extends javax.swing.JFrame implements LinkStoreListener {
     }//GEN-LAST:event_jbBrowseActionPerformed
 
     private void jbFetchActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jbFetchActionPerformed
+        fetchAction();
+    }//GEN-LAST:event_jbFetchActionPerformed
+
+    private void fetchAction() {
         try {
             String playlistAddress = jtfAddress.getText();
             linkStore = new LinkStore(playlistAddress);
@@ -204,10 +214,9 @@ public class MainFrame extends javax.swing.JFrame implements LinkStoreListener {
         } catch (MalformedURLException ex) {
             Logger.getLogger(MainFrame.class.getName()).log(Level.SEVERE, null, ex);
         }
-    }//GEN-LAST:event_jbFetchActionPerformed
+    }
 
     private void jbDownloadActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jbDownloadActionPerformed
-
         if (jlUrls.getSelectedIndex() < 0) {
             if (JOptionPane.showConfirmDialog(this, "Download full list?") == JOptionPane.YES_OPTION) {
                 linkStore.setDownloadList(retrievePlaylist);
@@ -225,6 +234,12 @@ public class MainFrame extends javax.swing.JFrame implements LinkStoreListener {
             selectedDirectory.mkdir();
         }
 
+        jtfLocation.setEnabled(false);
+        jtfAddress.setEnabled(false);
+        jbFetch.setEnabled(false);
+        jbBrowse.setEnabled(false);
+        jbDownload.setEnabled(false);
+
         jProgressBar.setMaximum(downloads);
 
         for (int i = 0; i < 3; i++) {
@@ -233,6 +248,14 @@ public class MainFrame extends javax.swing.JFrame implements LinkStoreListener {
 
         new Thread(linkStore).start();
     }//GEN-LAST:event_jbDownloadActionPerformed
+
+    private void jtfAddressKeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jtfAddressKeyTyped
+
+        if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
+            fetchAction();
+        }
+
+    }//GEN-LAST:event_jtfAddressKeyTyped
 
     private void chooseFile() {
 
@@ -288,10 +311,10 @@ public class MainFrame extends javax.swing.JFrame implements LinkStoreListener {
 
     @Override
     public void downloadBegin(DownloadTask.Descriptor task) {
-        
+
         DefaultListModel<DownloadTask.Descriptor> model = (DefaultListModel<DownloadTask.Descriptor>) jlDownloads.getModel();
         model.addElement(task);
-        
+
     }
 
     @Override
@@ -306,6 +329,12 @@ public class MainFrame extends javax.swing.JFrame implements LinkStoreListener {
         if (--downloads == 0) {
             JOptionPane.showMessageDialog(this, "Download complete!");
             jProgressBar.setValue(0);
+
+            jtfLocation.setEnabled(true);
+            jtfAddress.setEnabled(true);
+            jbFetch.setEnabled(true);
+            jbBrowse.setEnabled(true);
+            jbDownload.setEnabled(true);
         }
     }
 }
