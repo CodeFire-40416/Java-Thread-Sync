@@ -59,17 +59,16 @@ public class LinkStore implements Runnable {
     @Override
     public void run() {
         while (!links.isEmpty()) {
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException ex) {
-                Logger.getLogger(LinkStore.class.getName()).log(Level.SEVERE, null, ex);
-            }
+//            try {
+//                Thread.sleep(100);
+//            } catch (InterruptedException ex) {
+//                Logger.getLogger(LinkStore.class.getName()).log(Level.SEVERE, null, ex);
+//            }
 
             synchronized (this) {
                 notifyAll();
             }
         }
-
     }
 
     public List<String> retrieveFilelist() {
@@ -87,9 +86,21 @@ public class LinkStore implements Runnable {
         return list;
     }
     
-    public void completeDownload(String source, String target) {
+    public void beginDownload(DownloadTask.Descriptor task) {
         for (LinkStoreListener listener : listeners) {
-            listener.downloaded(source, target);
+            listener.downloadBegin(task);
+        }
+    }
+    
+    public void progressChanged(DownloadTask.Descriptor task) {
+        for (LinkStoreListener listener : listeners) {
+            listener.downloadProgress(task);
+        }
+    }
+    
+    public void completeDownload(DownloadTask.Descriptor task) {
+        for (LinkStoreListener listener : listeners) {
+            listener.downloadComplete(task);
         }
     }
 

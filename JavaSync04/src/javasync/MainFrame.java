@@ -27,6 +27,7 @@ import java.util.logging.Logger;
 import javax.swing.DefaultListModel;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
+import javax.swing.ListModel;
 
 /**
  *
@@ -269,7 +270,7 @@ public class MainFrame extends javax.swing.JFrame implements LinkStoreListener {
     private javax.swing.JButton jbBrowse;
     private javax.swing.JButton jbDownload;
     private javax.swing.JButton jbFetch;
-    private javax.swing.JList<String> jlDownloads;
+    private javax.swing.JList<DownloadTask.Descriptor> jlDownloads;
     private javax.swing.JList<String> jlUrls;
     private javax.swing.JTextField jtfAddress;
     private javax.swing.JTextField jtfLocation;
@@ -286,10 +287,20 @@ public class MainFrame extends javax.swing.JFrame implements LinkStoreListener {
     }
 
     @Override
-    public void downloaded(String source, String target) {
-        DefaultListModel<String> dlm = (DefaultListModel<String>) jlDownloads.getModel();
-        dlm.addElement(new File(target).getAbsolutePath());
+    public void downloadBegin(DownloadTask.Descriptor task) {
+        
+        DefaultListModel<DownloadTask.Descriptor> model = (DefaultListModel<DownloadTask.Descriptor>) jlDownloads.getModel();
+        model.addElement(task);
+        
+    }
 
+    @Override
+    public void downloadProgress(DownloadTask.Descriptor task) {
+        jlDownloads.repaint();
+    }
+
+    @Override
+    public void downloadComplete(DownloadTask.Descriptor task) {
         jProgressBar.setValue(jProgressBar.getValue() + 1);
 
         if (--downloads == 0) {

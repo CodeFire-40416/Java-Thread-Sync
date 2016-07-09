@@ -22,6 +22,10 @@ package javasync.net;
  */
 public interface LinkStoreListener {
 
-    public void downloaded(String source, String target);
+    public void downloadBegin(DownloadTask.Descriptor task);
+
+    public void downloadProgress(DownloadTask.Descriptor task);
+
+    public void downloadComplete(DownloadTask.Descriptor task);
 
 }

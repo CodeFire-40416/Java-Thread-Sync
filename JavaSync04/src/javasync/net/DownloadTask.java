@@ -17,13 +17,13 @@
 package javasync.net;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLDecoder;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -35,6 +35,10 @@ public class DownloadTask implements Runnable {
 
     private final LinkStore linkStore;
     private final File store;
+    private long total;
+    private String source;
+    private String target;
+    private Descriptor descriptor;
 
     public DownloadTask(LinkStore linkStore, File store) {
         this.linkStore = linkStore;
@@ -52,12 +56,13 @@ public class DownloadTask implements Runnable {
                 }
             }
 
-            String address = linkStore.getLinks().poll();
+            source = linkStore.getLinks().poll();
 
-            if (address != null) {
+            if (source != null) {
                 try {
-                    URLConnection conn = new URL(address).openConnection();
+                    URLConnection conn = new URL(source).openConnection();
                     conn.getContentType();
+                    total = conn.getContentLengthLong();
 
                     URL url = conn.getURL();
 
@@ -65,18 +70,24 @@ public class DownloadTask implements Runnable {
                     String decodedFile = URLDecoder.decode(new String(url.getFile().getBytes("ISO-8859-1"), "UTF-8"), "UTF-8");
                     // Get file name from file path
                     String filename = new File(decodedFile).getName();
-                    
-                    File targetFile = new File(store, filename);
 
-//                    System.out.printf("----------------->\nDownload:\n From: %s\n File: %s\n<-----------------\n",
-//                            url, filename);
-                    Files.copy(conn.getInputStream(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                    File targetFile = new File(store, filename);
+                    target = targetFile.toString();
                     
-                    // Notify!
-                    linkStore.completeDownload(address, targetFile.toString());
+                    descriptor = new Descriptor(source, target, total);
+
+                    // PROCESS
+                    linkStore.beginDownload(descriptor);
+                    
+                    download(conn.getInputStream(), targetFile);
+
+                    linkStore.progressChanged(descriptor);
+                    linkStore.completeDownload(descriptor);
                 } catch (MalformedURLException ex) {
                     Logger.getLogger(DownloadTask.class.getName()).log(Level.SEVERE, null, ex);
                 } catch (IOException ex) {
+                    Logger.getLogger(DownloadTask.class.getName()).log(Level.SEVERE, null, ex);
+                } catch (InterruptedException ex) {
                     Logger.getLogger(DownloadTask.class.getName()).log(Level.SEVERE, null, ex);
                 }
             } else {
@@ -85,4 +96,73 @@ public class DownloadTask implements Runnable {
         }
     }
 
+    private void download(InputStream inputStream, File targetFile) throws InterruptedException {
+        long portion = total / (1024 * 1024);
+        long mount = 0;
+
+        try (FileOutputStream fos = new FileOutputStream(targetFile)) {
+
+            byte[] buffer = new byte[8192]; // 8K buffer
+
+            for (int read; (read = inputStream.read(buffer)) >= 0;) {
+
+                if (read > 0) {
+                    descriptor.increase(read);
+                    mount += read;
+
+                    if (mount - portion >= 0) {
+                        mount = 0;
+//                        System.out.println(read + "  " + descriptor.getDownload());
+                        linkStore.progressChanged(descriptor);
+                    }
+                }
+
+                fos.write(buffer, 0, read);
+                fos.flush();
+                
+//                Thread.sleep(1);
+            }
+        } catch (IOException ex) {
+            Logger.getLogger(DownloadTask.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    public class Descriptor {
+
+        private final String source;
+        private final String target;
+        private final long total;
+        private long download;
+
+        public Descriptor(String source, String target, long total) {
+            this.source = source;
+            this.target = target;
+            this.total = total;
+        }
+
+        public String getSource() {
+            return source;
+        }
+
+        public String getTarget() {
+            return target;
+        }
+
+        public long getTotal() {
+            return total;
+        }
+
+        public long getDownload() {
+            return download;
+        }
+
+        public void increase(long progress) {
+            this.download += progress;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("[ %3d%% ] %s", download * 100 / total, target);
+        }
+    }
 }
